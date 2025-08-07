@@ -1,0 +1,139 @@
+.registerUser {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
+  box-sizing: border-box;
+}
+
+.light .registerUser {
+  color: #222;
+}
+
+.dark .registerUser {
+  background: linear-gradient(to bottom, #011440, #1e293b);
+  color: #f3f4f6;
+}
+
+.reg {
+  color: rgb(132, 131, 131);
+  font-size: 2rem;
+  margin-bottom: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.3s ease-in-out;
+}
+
+.reg:hover {
+  transform: scale(1.1);
+  color: #60a5fa;
+}
+
+.register-form {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(15px);
+  padding: 30px;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  display: flex;
+  border-radius: 50px;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 500px;
+  width: 90%;
+  box-sizing: border-box;
+}
+
+.register-form input {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  background-color: rgba(255, 255, 255, 0.25);
+  color: white;
+  outline: none;
+  transition: all 0.3s ease-in-out;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.register-form input::placeholder {
+  color: #ddd;
+}
+
+.light .register-form input {
+  background-color: rgba(255, 255, 255, 0.75);
+  color: #111;
+}
+
+.light .register-form input::placeholder {
+  color: #555;
+}
+
+.register-form button {
+  padding: 10px;
+  border: none;
+  border-radius: 10px;
+  background-color: #394e88;
+  color: white;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out;
+}
+
+.register-form button:hover {
+  transform: scale(1.05);
+  background-color: #aedf0c;
+  color: black;
+}
+
+.light .register-form button {
+  background-color: #3b5998;
+  color: white;
+}
+
+.light .register-form button:hover {
+  background-color: #5fa200;
+  color: #fff;
+}
+
+.oldUser-below {
+  width: 100%;
+  text-align: center;
+  font-size: 1rem;
+  color: #ff006f;
+  letter-spacing: 0.2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.oldUser-below .meme {
+  margin-left: 8px;
+  color: #1756c2;
+  cursor: pointer;
+  text-decoration: underline;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.oldUser-below .meme:hover {
+  color: #0a357a;
+}
+
+.dark .oldUser-below .meme {
+  color: #60a5fa;
+}
+
+.dark .oldUser-below .meme:hover {
+  color: #b3d8fd;
+}
+
+@media (max-width: 400px) {
+  .register-form {
+    padding: 30px 20px;
+  }
+}

@@ -1,0 +1,38 @@
+# Virtual Environment
+# ---------------------------------
+# Ignore the entire Python virtual environment folder. This is critical.
+/.venv
+venv/
+env/
+
+# Data & Model Files
+# ---------------------------------
+# We don't want to commit large data or generated model files to Git.
+/data/
+app/*.joblib
+
+# Python Cache & Compiled Files
+# ---------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment Variables - SECRETS
+# ---------------------------------
+# In case you add secrets later.
+.env
+.env.*
+!/.env.example
+
+# Testing & Tooling Cache
+# ---------------------------------
+.pytest_cache/
+.mypy_cache/
+/coverage
+.coverage
+
+# Editor & OS Files
+# ---------------------------------
+.idea
+.vscode
+.DS_Store

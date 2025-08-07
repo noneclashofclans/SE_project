@@ -1,0 +1,48 @@
+# Dependencies
+# ---------------------------------
+# The massive folder containing all downloaded packages.
+/node_modules
+
+# Build Output
+# ---------------------------------
+# The final, compiled code for production.
+/dist
+/dist-ssr
+
+# Vite Cache
+# ---------------------------------
+# Vite's internal cache for the dev server.
+/.vite/
+
+# Environment Variables - SECRETS
+# ---------------------------------
+# These files contain your secret API keys and should NEVER be in Git.
+.env
+.env.*
+*.local
+
+# But DO NOT ignore an example file if you create one.
+!/.env.example
+
+# Logs & Reports
+# ---------------------------------
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+/coverage
+
+# Editor & OS Files
+# ---------------------------------
+# Ignore settings for various code editors and operating systems.
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
