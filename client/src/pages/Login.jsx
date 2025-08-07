@@ -21,7 +21,7 @@ const Login = ({ setUser }) => {  // Add setUser prop
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/auth/login",
+        "https://se-project-nc7b.onrender.com/api/auth/login",
         {
           email,
           password,
