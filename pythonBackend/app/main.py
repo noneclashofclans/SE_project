@@ -1,4 +1,4 @@
-# app/main.py (Definitive Final Version 2.0)
+# app/main.py (Definitive Final Version 2.0 with CORS fix)
 import os
 import pandas as pd
 from fastapi import FastAPI, HTTPException
@@ -10,7 +10,15 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="Store Placement Prediction API")
 
-origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
+# --- ✅ FINAL FIX FOR DEPLOYMENT ---
+# Add your live Vercel URL to the list of allowed origins.
+origins = [
+    "http://localhost:5173", 
+    "http://127.0.0.1:5173",
+    "https://se-project-rishit-2025.vercel.app", # <-- ADD THIS LINE
+]
+# --- END OF FIX ---
+
 app.add_middleware(
     CORSMiddleware, allow_origins=origins, allow_credentials=True,
     allow_methods=["*"], allow_headers=["*"],
@@ -47,25 +55,18 @@ def generate_points_in_circle(center_lat, center_lng, radius_km, num_points=30):
         points.append({'latitude': center_lat + lat_offset, 'longitude': center_lng + lng_offset})
     return points
 
-# --- ✅ DEFINITIVE FIX FOR PLACE NAMING ---
 def get_nearest_place_name(lat, lon):
     if places_tree is None or places_df.empty:
         return "Open Area"
     
     distance, index = places_tree.query([[lat, lon]], k=1)
     
-    # Check if the nearest place is within a reasonable distance
     if distance[0] * 111.0 <= 2.5:
-        # Get the potential name from the dataframe
         place_name = places_df.iloc[index[0]]['name']
-        
-        # CRITICAL CHECK: Only return the name if it's a valid, non-empty string.
         if place_name and isinstance(place_name, str) and place_name.strip():
             return place_name
     
-    # In ALL other cases (too far OR close but has no name), return "Open Area".
     return "Open Area"
-# --- END OF FIX ---
 
 class CircleRequest(BaseModel):
     latitude: float
