@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import "./Register.css";
 import { useNavigate } from "react-router-dom";
+const apiUrl = import.meta.env.VITE_AUTH_API_URL || "http://localhost:5000";
 
 const Register = () => {
   const [password, setPassword] = useState("");
@@ -18,7 +19,7 @@ const Register = () => {
 
     try {
       await axios.post(
-        "https://se-project-nc7b.onrender.com/api/auth/register",
+        `${apiUrl}/api/auth/register`,
         {
           email,
           password,

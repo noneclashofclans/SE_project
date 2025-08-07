@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { signInWithPopup } from "firebase/auth";
 import { auth, provider } from "../firebase";
+const apiUrl = import.meta.env.VITE_AUTH_API_URL || "http://localhost:5000";
 
 const Login = ({ setUser }) => {  // Add setUser prop
   const [email, setemail] = useState("");
@@ -21,7 +22,7 @@ const Login = ({ setUser }) => {  // Add setUser prop
 
     try {
       const response = await axios.post(
-        "https://se-project-nc7b.onrender.com/api/auth/login",
+        `${apiUrl}/api/auth/login`,
         {
           email,
           password,
