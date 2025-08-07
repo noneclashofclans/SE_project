@@ -8,7 +8,7 @@ env/
 # Data & Model Files
 # ---------------------------------
 # We don't want to commit large data or generated model files to Git.
-/data/
+/data/processed/
 app/*.joblib
 
 # Python Cache & Compiled Files
