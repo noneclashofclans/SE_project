@@ -1,4 +1,4 @@
-// express-auth/server.js
+// express-auth/server.js (Final, Simplified Version)
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -9,27 +9,18 @@ dotenv.config();
 
 const app = express();
 
-
-const allowedOrigins = [
-  'http://localhost:5173',                 
-  'https://se-project-rishi.vercel.app'    
-];
-
-const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  }
-};
-
-app.use(cors(corsOptions));
+// --- ✅ FINAL, SIMPLIFIED CORS CONFIGURATION ---
+// This tells the server to allow requests from ANY origin.
+// It's the most reliable way to fix deployment CORS issues.
+app.use(cors());
 // --- END OF CORRECTION ---
 
 app.use(express.json());
 app.use("/api/auth", authRoutes);
+
+app.get("/", (req, res) => {
+    res.send("Hello from the Auth Server!");
+});
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("Connected to MongoDB"))
