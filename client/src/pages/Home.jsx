@@ -90,7 +90,7 @@ const Home = ({ searchedLocation, user }) => {
       center: [center.lng, center.lat],
       zoom: 12,
     });
-    marker.current = new maplibregl.Marker({ color: "#14b8a6" }).setLngLat([center.lng, center.lat]).addTo(map.current);
+    marker.current = new maplibregl.Marker({ color: "#052abcff" }).setLngLat([center.lng, center.lat]).addTo(map.current);
     return () => map.current?.remove();
   }, [theme]);
 
