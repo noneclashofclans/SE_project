@@ -15,7 +15,7 @@ app = FastAPI(title="Store Placement Prediction API (Model-Driven)")
 origins = [
     "http://localhost:5173", 
     "http://127.0.0.1:5173", 
-    "https://se-project-rishitm.vercel.app",
+    "https://rishit-place.netlify.app",
     "https://se-project-nc7b.onrender.com"
 ]
 
@@ -53,7 +53,6 @@ for name, f_id in FILE_IDS.items():
     else:
         download_file(name, f_id, model_path)
 
-# --- MEMORY OPTIMIZED LOADING ---
 feature_files = {
     'places': 'places.feather',
     'buildings': 'buildings.feather',
@@ -146,6 +145,7 @@ class CircleRequest(BaseModel):
     radius_km: float
 
 @app.post("/predict-circle")
+@app.post("/predict-circle/")
 def predict_circle_locations(request: CircleRequest):
     try:
         results = []

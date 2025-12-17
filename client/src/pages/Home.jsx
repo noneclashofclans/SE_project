@@ -2,13 +2,11 @@ import React, { useRef, useEffect, useState, useCallback, useMemo } from "react"
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import useTheme from "../context/useTheme";
-// 1. Added CheckCircle to imports
 import { Search, MapPin, X, Trash2, Globe, Sun, Moon, History, Navigation, AlertTriangle, CheckCircle } from "lucide-react";
 import '../styles/codeforces.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_API_KEY;
-const ORS_API_KEY = import.meta.env.VITE_ORS_API_KEY;
 
 const EASTERN_ZONE_BOUNDS = {
   minLat: 17,
@@ -71,6 +69,7 @@ const Home = ({ searchedLocation, user }) => {
   const map = useRef(null);
   const mainMarker = useRef(null);
   const predictionMarkers = useRef([]);
+  
   const debounceTimeout = useRef(null);
 
   const { theme: themeMode, toggleTheme } = useTheme();
@@ -90,8 +89,6 @@ const Home = ({ searchedLocation, user }) => {
   const [analysisResults, setAnalysisResults] = useState([]);
   const [zoneNotification, setZoneNotification] = useState(null);
   const [selectedIndex, setSelectedIndex] = useState(-1);
-
-  // 3. State for Autocomplete Suggestions
   const [searchSuggestions, setSearchSuggestions] = useState([]);
   const [selectedLocation, setSelectedLocation] = useState(null);
 
@@ -123,7 +120,6 @@ const Home = ({ searchedLocation, user }) => {
   }, [analysisResults]);
 
 
-  // Auto-hide notification logic
   useEffect(() => {
     if (zoneNotification) {
       const timer = setTimeout(() => {
@@ -133,43 +129,42 @@ const Home = ({ searchedLocation, user }) => {
     }
   }, [zoneNotification]);
 
-  const fetchSuggestionsORS = useCallback(async (query) => {
+  const fetchSuggestionsMapTiler = useCallback(async (query) => {
+    if (!MAPTILER_KEY) {
+      console.warn("MapTiler Key missing");
+      return [];
+    }
+    
     try {
-      const url = `https://api.openrouteservice.org/geocode/autocomplete?api_key=${ORS_API_KEY}&text=${encodeURIComponent(query)}`;
+      const bbox = `${EASTERN_ZONE_BOUNDS.minLng},${EASTERN_ZONE_BOUNDS.minLat},${EASTERN_ZONE_BOUNDS.maxLng},${EASTERN_ZONE_BOUNDS.maxLat}`;
+      
+      const url = `https://api.maptiler.com/geocoding/${encodeURIComponent(query)}.json?key=${MAPTILER_KEY}&bbox=${bbox}&limit=5`;
+
       const res = await fetch(url);
       const data = await res.json();
 
-      console.log("API Response Data:", data);
-
-      if (data.features && data.features.length > 0) {
+      if (data.features) {
         return data.features.map(f => ({
-          id: f.properties.gid,
-          lat: f.geometry.coordinates[1],
-          lng: f.geometry.coordinates[0],
-          name: f.properties.name,
-          address: f.properties.label
+          id: f.id,
+          lat: f.center[1],
+          lng: f.center[0],
+          name: f.text,
+          address: f.place_name
         }));
-      } else {
-        console.log("No features found in response");
-        return [];
       }
+      return [];
     } catch (e) {
-      console.error("Fetch failed:", e);
+      console.error("MapTiler Fetch failed:", e);
       return [];
     }
-  }, [ORS_API_KEY]);
+  }, []);
 
-  // 5. Handle input change with debounce for suggestions
-  const handleSearchInputChange = async (e) => {
+  const handleSearchInputChange = (e) => {
     const value = e.target.value;
     setSearchQuery(value);
     setSelectedLocation(null);
-    setAnalysisResults([]);
-    setZoneNotification(null);
 
-    if (debounceTimeout.current) {
-      clearTimeout(debounceTimeout.current);
-    }
+    if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
 
     if (value.length < 3) {
       setSearchSuggestions([]);
@@ -177,76 +172,77 @@ const Home = ({ searchedLocation, user }) => {
     }
 
     debounceTimeout.current = setTimeout(async () => {
-      setIsLoading(true);
-      const suggestions = await fetchSuggestionsORS(value);
+      const suggestions = await fetchSuggestionsMapTiler(value);
       setSearchSuggestions(suggestions);
-      setIsLoading(false);
-    }, 300);
+    }, 300); 
   };
 
-  // 6. Handle suggestion click and zone check
+  // --- UPDATED: Now saves to history immediately when clicked ---
   const handleSuggestionClick = (feature) => {
-    setSearchQuery(feature.address);
-    setSearchSuggestions([]);
-
+    // 1. Validation
     if (!isWithinEasternZone(feature.lat, feature.lng)) {
       setZoneNotification({
         message: `Location is outside the Eastern Zone. Analysis disabled.`,
-        type: 'error' // Changed from warning to error for red styling
+        type: 'error'
       });
+      setSearchQuery(feature.address);
+      setSearchSuggestions([]);
       setSelectedLocation(null);
       return;
     }
-
-    // Optional: Show success toast when location is valid
-    // setZoneNotification({ message: 'Location selected.', type: 'success' });
     
-    setSelectedLocation(feature);
+    // 2. Update Map and Location State
     map.current.flyTo({ center: [feature.lng, feature.lat], zoom: 14 });
     setCurrentLocation({
       lat: feature.lat,
       lng: feature.lng,
       name: feature.address
     });
-  };
 
-  const handleFinalSearch = () => {
-    if (!selectedLocation) {
-      if (searchSuggestions.length > 0) {
-        // If results exist but none selected, select the first one
-        handleSuggestionClick(searchSuggestions[0]);
-      } else {
-        setZoneNotification({
-          message: `Please search for and select a valid location.`,
-          type: 'error'
-        });
-      }
-      return;
-    }
-
-    // If a valid location is selected, set it as current location
-    setCurrentLocation(selectedLocation);
-    setIsSheetExpanded(true);
-
+    // 3. Save to History (THIS WAS MISSING)
     setSearchHistory(prev => {
-      const exists = prev.some(item => Math.abs(item.lat - selectedLocation.lat) < 0.0001);
+      // Check for duplicates based on proximity
+      const exists = prev.some(item => Math.abs(item.lat - feature.lat) < 0.0001);
       return exists ? prev : [{
-        lat: selectedLocation.lat,
-        lng: selectedLocation.lng,
-        name: selectedLocation.address,
+        lat: feature.lat,
+        lng: feature.lng,
+        name: feature.address,
         timestamp: new Date()
       }, ...prev.slice(0, 9)];
     });
 
-    setSearchQuery(selectedLocation.address);
-    setSelectedLocation(null);
+    // 4. Update UI
+    setSearchQuery(feature.address);
+    setSearchSuggestions([]);
+    setSelectedLocation(null); // Clear selection since we committed it
+    setIsSheetExpanded(true); // Open sheet to show analyze button
   };
 
-  // --- Map and Marker Logic (Unchanged) ---
+  // --- UPDATED: Delegates to handleSuggestionClick if possible ---
+  const handleFinalSearch = () => {
+    // Case 1: User selected via arrow keys but didn't click
+    if (selectedLocation) {
+      handleSuggestionClick(selectedLocation);
+      return;
+    }
+
+    // Case 2: User typed "Bhubaneswar" and hit Enter without selecting
+    if (searchSuggestions.length > 0) {
+      handleSuggestionClick(searchSuggestions[0]);
+      return;
+    }
+
+    // Case 3: No valid input
+    setZoneNotification({
+      message: `Please search for a valid location first.`,
+      type: 'error'
+    });
+  };
+
+  // --- Map and Marker Logic ---
   const createMarkerElement = useCallback((color, size = 20) => {
     const el = document.createElement('div');
     const safeColor = color || "#000000";
-
 
     el.style.backgroundColor = safeColor;
     el.style.width = `${size}px`;
@@ -293,7 +289,6 @@ const Home = ({ searchedLocation, user }) => {
 
       const placeName = result.place_name || "Open Area";
 
-
       const popup = new maplibregl.Popup({ offset: 15, className: 'custom-popup' }).setHTML(`
         <div style="font-family: sans-serif; color: #333; padding: 5px;">
           <div style="font-weight: bold; color: ${color}; margin-bottom: 4px;">
@@ -330,7 +325,6 @@ const Home = ({ searchedLocation, user }) => {
     map.current = new maplibregl.Map({
       container: mapContainer.current,
       style: t.mapStyle || fallbackStyle,
-      // Default to a central point in the Eastern Zone
       center: [86.7, 23.5],
       zoom: 6,
       pitch: 0,
@@ -338,7 +332,6 @@ const Home = ({ searchedLocation, user }) => {
       attributionControl: false
     });
 
-    // Initialize main marker at the default currentLocation
     mainMarker.current = new maplibregl.Marker({
       element: createMarkerElement(t.accent, 28),
       anchor: 'center'
@@ -388,7 +381,6 @@ const Home = ({ searchedLocation, user }) => {
   const handleAnalysis = async () => {
     if (!map.current) return;
 
-    // Check zone again before running analysis
     if (!isWithinEasternZone(currentLocation.lat, currentLocation.lng)) {
       setZoneNotification({
         message: `Current location is outside the Eastern Zone. Analysis skipped.`,
@@ -398,7 +390,7 @@ const Home = ({ searchedLocation, user }) => {
     }
 
     setIsLoading(true);
-    setZoneNotification(null); // Clear notification before starting
+    setZoneNotification(null); 
 
     setAnalysisResults([]);
 
@@ -449,8 +441,6 @@ const Home = ({ searchedLocation, user }) => {
       const data = await response.json();
 
       setAnalysisResults(data);
-      // Optional: Add success notification here
-      // setZoneNotification({ message: 'Analysis complete!', type: 'success' });
 
     } catch (error) {
       console.error("Failed to run analysis:", error);
@@ -481,7 +471,6 @@ const Home = ({ searchedLocation, user }) => {
     <div className={`cf-map-wrapper ${themeMode}`}>
       <div ref={mapContainer} className="cf-map-canvas" />
 
-      {/* 2. REPLACED OLD NOTIFICATION WITH NEW TOAST STRUCTURE */}
       {zoneNotification && (
         <div className="cf-notification-container">
           <div className={`cf-notification-toast ${zoneNotification.type === 'error' ? 'cf-toast-error' : 'cf-toast-success'}`}>
@@ -514,12 +503,11 @@ const Home = ({ searchedLocation, user }) => {
           <input
             type="text"
             value={searchQuery}
-            onChange={handleSearchInputChange} // Use new handler
-            placeholder="Where to place your store?"
+            onChange={handleSearchInputChange}
+            placeholder="Search city (uses MapTiler)"
             className="cf-search-input-field"
-            onKeyPress={(e) => e.key === 'Enter' && handleFinalSearch()} // Use new handler
+            onKeyPress={(e) => e.key === 'Enter' && handleFinalSearch()}
           />
-          {/* 3. UPDATED SEARCH BUTTON TO SHOW LOADER */}
           <button className="cf-search-action-btn" onClick={handleFinalSearch}>
             {isLoading ? <div className="cf-search-loader" /> : <Search size={20} />}
           </button>
@@ -546,8 +534,6 @@ const Home = ({ searchedLocation, user }) => {
         )}
       </div>
 
-
-      {/* Bottom Sheet (Mostly Unchanged) */}
       <div className={`cf-bottom-sheet ${isSheetExpanded ? 'expanded' : 'collapsed'}`}>
         <div className="cf-sheet-handle-area" onClick={() => setIsSheetExpanded(!isSheetExpanded)}>
           <div className="cf-sheet-handle-bar" />
@@ -603,7 +589,6 @@ const Home = ({ searchedLocation, user }) => {
             />
           </div>
 
-          {/* 5. Analysis Summary Box */}
           {analysisResults.length > 0 && (
             <div className="cf-analysis-summary" style={{
               marginTop: '20px',
@@ -635,7 +620,6 @@ const Home = ({ searchedLocation, user }) => {
         </div>
       </div>
 
-      {/* History Overlay (Unchanged) */}
       <div className={`cf-history-overlay ${showHistory ? 'visible' : ''}`}>
         <div className="cf-history-header">
           <h3>Recent Locations</h3>
