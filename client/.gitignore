@@ -58,7 +58,6 @@ __pycache__/
 
 # Data & Models (Often very large)
 *.csv
-*.json
 *.h5
 *.pkl
 *.pth
