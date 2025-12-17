@@ -1,0 +1,2 @@
+pythonBackend/data/raw/buildings.geojson filter=lfs diff=lfs merge=lfs -text
+pythonBackend/data/raw/landuse.geojson filter=lfs diff=lfs merge=lfs -text

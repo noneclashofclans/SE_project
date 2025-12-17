@@ -1,0 +1,29 @@
+# Dependencies
+# ---------------------------------
+# The massive folder containing all downloaded packages.
+/node_modules
+
+# Environment Variables - SECRETS
+# ---------------------------------
+# Contains database URLs and secret keys. NEVER commit this.
+.env
+.env.*
+!.env.example
+
+# Logs
+# ---------------------------------
+logs
+*.log
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Test Reports
+# ---------------------------------
+/coverage
+
+# Editor & OS Files
+# ---------------------------------
+.idea
+.vscode
+.DS_Store
