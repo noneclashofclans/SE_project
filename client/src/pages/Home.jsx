@@ -124,7 +124,7 @@ const Home = ({ searchedLocation, user }) => {
 
   const fetchSuggestionsORS = useCallback(async (query) => {
     try {
-        const url = `https://api.openrouteservice.org/geocode/autocomplete?api_key=${VITE_ORS_API_KEY}&text=${encodeURIComponent(query)}`;
+        const url = `https://api.openrouteservice.org/geocode/autocomplete?api_key=${ORS_API_KEY}&text=${encodeURIComponent(query)}`;
         const res = await fetch(url);
         const data = await res.json();
         
@@ -146,7 +146,7 @@ const Home = ({ searchedLocation, user }) => {
         console.error("Fetch failed:", e);
         return [];
     }
-}, [VITE_ORS_API_KEY]);
+}, [ORS_API_KEY]);
 
   // 5. Handle input change with debounce for suggestions
   const handleSearchInputChange = async (e) => {
