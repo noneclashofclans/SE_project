@@ -1301,7 +1301,6 @@ body {
   z-index: 1;
 }
 
-/* --- THE FLOATING SEARCH CONTAINER --- */
 .cf-floating-search-container {
   position: fixed !important;
   top: 60px !important;
@@ -1314,6 +1313,15 @@ body {
   flex-direction: column !important;
   overflow: visible !important;
   pointer-events: none !important;
+  margin-top: 2rem !important;
+}
+
+@media screen and (max-width: 1783px) {
+  .cf-floating-search-container {
+    transform: translateX(-50%) !important; 
+    top: 20px !important; 
+    width: 95% !important;
+  }
 }
 
 /* --- THE SEARCH BAR --- */
@@ -1532,4 +1540,66 @@ body {
 
 .dark .cf-suggestion-text span {
   color: #aaaaaa !important;
+}
+
+/* --- NOTIFICATION CONTAINER (Toast Style) --- */
+.cf-notification-container {
+  position: fixed;
+  bottom: 30px; /* Sits at the bottom of the screen */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 999999; /* Ensures it sits on top of the map */
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none; /* Allows clicking through the container area */
+}
+
+/* --- TOAST CARD STYLE --- */
+.cf-notification-toast {
+  pointer-events: auto; /* Re-enable clicks for the close button */
+  min-width: 320px;
+  max-width: 450px;
+  background: #ffffff;
+  padding: 12px 18px;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: slideUpFade 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+  border-left: 5px solid #0055aa; /* Default Accent */
+}
+
+
+.dark .cf-notification-toast {
+  background: #1a1a1a;
+  color: #ffffff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+
+.cf-toast-success { border-left-color: #10b981 !important; }
+.cf-toast-error { border-left-color: #ef4444 !important; }
+
+
+@keyframes slideUpFade {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media screen and (max-width: 768px) {
+  .cf-notification-container {
+    bottom: 20px; 
+    width: 90%;   
+    max-width: none;
+  }
+
+  .cf-notification-toast {
+    width: 100%; 
+    min-width: auto; 
+    box-sizing: border-box;
+    font-size: 14px; 
+    padding: 12px 15px;
+  }
 }
