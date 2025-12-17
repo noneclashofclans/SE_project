@@ -128,7 +128,7 @@ const Home = ({ searchedLocation, user }) => {
         const res = await fetch(url);
         const data = await res.json();
         
-        console.log("API Response Data:", data); // Check console for this!
+        console.log("API Response Data:", data); 
         
         if (data.features && data.features.length > 0) {
             return data.features.map(f => ({

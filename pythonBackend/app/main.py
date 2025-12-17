@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import gdown
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from scipy.spatial import cKDTree
@@ -10,15 +11,46 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="Store Placement Prediction API (Model-Driven)")
 
-origins = ["http://localhost:5173", "http://127.0.0.1:5173", "https://se-project-rishi.vercel.app"]
+origins = [
+    "http://localhost:5173", 
+    "http://127.0.0.1:5173", 
+    "https://se-project-rishitm.vercel.app",
+    "https://se-project-nc7b.onrender.com"
+]
+
 app.add_middleware(
     CORSMiddleware, allow_origins=origins, allow_credentials=True,
     allow_methods=["*"], allow_headers=["*"],
 )
 
 base_path = os.path.dirname(__file__)
-data_path = os.path.join(base_path, '..', 'data', 'processed')
-model_path = os.path.join(base_path)
+data_path = os.path.normpath(os.path.join(base_path, '..', 'data', 'processed'))
+model_path = base_path
+
+os.makedirs(data_path, exist_ok=True)
+
+FILE_IDS = {
+    'places.feather': '1XzusjIzGXDplOXgOD3omOBQj93ti6i3Y',
+    'buildings.feather': '1cb9c41YqK9AbJsPCXOeViTOqGnN59gbS',
+    'landuse.feather': '1-8P1U1gkeKXU7jz6gVotY0qGWhf-z6gm',
+    'natural.feather': '1Zj0OQKNyioPAfDCQ1a4S-3JhCAu31WsN',
+    'pois.feather': '1k-BQGLrEApOhX0kir6PyKpq-D7zTcqKg',
+    'store_placement_model.joblib': '1RPGOxJSYzZgvm-VAizavYSfsvNLL7vHH',
+    'feature_columns.joblib': '1jVUwW-RPZeRyjVwxUor0mqNROC7RPIm7',
+    'kmeans_model.joblib': '1RdlFtGV8ql_-2ji3l3NAox248Uf3g-37'
+}
+
+def download_file(file_name, file_id, target_dir):
+    dest = os.path.join(target_dir, file_name)
+    if not os.path.exists(dest):
+        url = f'https://drive.google.com/uc?id={file_id}'
+        gdown.download(url, dest, quiet=False)
+
+for name, f_id in FILE_IDS.items():
+    if name.endswith('.feather'):
+        download_file(name, f_id, data_path)
+    else:
+        download_file(name, f_id, model_path)
 
 feature_dfs = {}
 feature_files = {
@@ -29,18 +61,18 @@ feature_files = {
     'pois': 'pois.feather',
 }
 
-def load_feather_safely(name, filename):
+def load_feather_safely(filename):
     try:
         df = pd.read_feather(os.path.join(data_path, filename))
         return df
-    except FileNotFoundError:
+    except Exception:
         return pd.DataFrame()
 
 for name, filename in feature_files.items():
-    feature_dfs[name] = load_feather_safely(name, filename)
+    feature_dfs[name] = load_feather_safely(filename)
 
 if feature_dfs['places'].empty:
-    raise RuntimeError("Base 'places.feather' data is missing. Cannot initialize API.")
+    raise RuntimeError("Critical data files missing.")
 
 feature_trees = {}
 for name, df in feature_dfs.items():
@@ -53,50 +85,38 @@ try:
     model = load(os.path.join(model_path, 'store_placement_model.joblib'))
     feature_cols = load(os.path.join(model_path, 'feature_columns.joblib'))
     kmeans = load(os.path.join(model_path, 'kmeans_model.joblib'))
-except FileNotFoundError:
-    raise RuntimeError("Model files not found. Please run '02_train_model.py' first.")
+except Exception as e:
+    raise RuntimeError(f"Model loading failed: {e}")
 
 def calculate_distance_to_nearest(lat, lon, tree):
-    if tree is None: return 9999.0
+    if tree is None: return 999.0
     dist, _ = tree.query([[lat, lon]], k=1)
     return dist[0] * 111.0
 
 def generate_features(lat, lon):
     features = {'latitude': lat, 'longitude': lon}
-    
     for name, tree in feature_trees.items():
         dist = calculate_distance_to_nearest(lat, lon, tree)
+        target_plural = 'dist_to_nearest_' + name
+        target_singular = 'dist_to_nearest_' + name.rstrip('s')
         
-        expected_col_name = None
-        target_name_singular = 'dist_to_nearest_' + name.rstrip('s')
-        target_name_plural = 'dist_to_nearest_' + name
-        
+        found_col = f'dist_to_nearest_{name}'
         for col in feature_cols:
-            if col == target_name_plural:
-                expected_col_name = target_name_plural
+            if col in [target_plural, target_singular]:
+                found_col = col
                 break
-            if col == target_name_singular:
-                expected_col_name = target_name_singular
-                break
+        features[found_col] = dist
         
-        if not expected_col_name:
-             expected_col_name = f'dist_to_nearest_{name}'
-
-        features[expected_col_name] = dist
-        
-    feature_vector = pd.DataFrame([features])[feature_cols]
-    return feature_vector
+    return pd.DataFrame([features])[feature_cols]
 
 def get_nearest_place_name(lat, lon):
-    places_df = feature_dfs['places']
-    if places_df.empty or feature_trees['places'] is None: return "Open Area"
-    
-    distance, index = feature_trees['places'].query([[lat, lon]], k=1)
-    
-    if distance[0] * 111.0 <= 2.5:
-        place_name = places_df.iloc[index[0]]['name']
-        if place_name and isinstance(place_name, str) and place_name.strip():
-            return place_name
+    df = feature_dfs['places']
+    tree = feature_trees['places']
+    if df.empty or tree is None: return "Open Area"
+    dist, idx = tree.query([[lat, lon]], k=1)
+    if dist[0] * 111.0 <= 2.5:
+        name = df.iloc[idx[0]]['name']
+        return name if (isinstance(name, str) and name.strip()) else "Open Area"
     return "Open Area"
 
 class CircleRequest(BaseModel):
@@ -107,40 +127,31 @@ class CircleRequest(BaseModel):
 @app.post("/predict-circle")
 def predict_circle_locations(request: CircleRequest):
     try:
-        points_to_predict = []
-        num_points = 50
-        for _ in range(num_points):
+        results = []
+        center_sum = kmeans.cluster_centers_.sum(axis=1)
+        good_cluster_id = center_sum.argmin()
+        
+        for _ in range(50):
             angle = random.uniform(0, 2 * math.pi)
             r = request.radius_km * math.sqrt(random.uniform(0, 1))
-            lat_offset = r * math.cos(angle) / 110.574
-            lng_offset = r * math.sin(angle) / (111.320 * math.cos(math.radians(request.latitude)))
-            points_to_predict.append({'latitude': request.latitude + lat_offset, 'longitude': request.longitude + lng_offset})
-        
-        results = []
-        
-        good_cluster_id = kmeans.cluster_centers_.sum(axis=1).argmin()
-        
-        for point in points_to_predict:
-            lat, lon = point['latitude'], point['longitude']
+            lat_off = r * math.cos(angle) / 110.574
+            lng_off = r * math.sin(angle) / (111.320 * math.cos(math.radians(request.latitude)))
             
-            feature_vector = generate_features(lat, lon)
-            
-            probabilities = model.predict_proba(feature_vector)[0]
-            
-            suitability_score = probabilities[good_cluster_id]
-            is_suitable = suitability_score > 0.6
+            p_lat, p_lng = request.latitude + lat_off, request.longitude + lng_off
+            fv = generate_features(p_lat, p_lng)
+            probs = model.predict_proba(fv)[0]
+            score = float(probs[good_cluster_id])
             
             results.append({
-                "latitude": lat, "longitude": lon,
-                "is_suitable": bool(is_suitable),
-                "suitability_score": round(suitability_score, 3),
-                "place_name": get_nearest_place_name(lat, lon)
+                "latitude": p_lat, "longitude": p_lng,
+                "is_suitable": score > 0.6,
+                "suitability_score": round(score, 3),
+                "place_name": get_nearest_place_name(p_lat, p_lng)
             })
-            
         return results
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal prediction error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/")
 def root():
-    return {"message": "Store Placement API is running in Model-Driven mode (5-Feature Random Forest)."}
+    return {"status": "running"}
