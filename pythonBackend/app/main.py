@@ -1,4 +1,5 @@
 import os
+import gc
 import pandas as pd
 import gdown
 from fastapi import FastAPI, HTTPException
@@ -52,7 +53,7 @@ for name, f_id in FILE_IDS.items():
     else:
         download_file(name, f_id, model_path)
 
-feature_dfs = {}
+# --- MEMORY OPTIMIZED LOADING ---
 feature_files = {
     'places': 'places.feather',
     'buildings': 'buildings.feather',
@@ -61,25 +62,46 @@ feature_files = {
     'pois': 'pois.feather',
 }
 
-def load_feather_safely(filename):
-    try:
-        df = pd.read_feather(os.path.join(data_path, filename))
-        return df
-    except Exception:
-        return pd.DataFrame()
-
-for name, filename in feature_files.items():
-    feature_dfs[name] = load_feather_safely(filename)
-
-if feature_dfs['places'].empty:
-    raise RuntimeError("Critical data files missing.")
-
 feature_trees = {}
-for name, df in feature_dfs.items():
-    if not df.empty:
-        feature_trees[name] = cKDTree(df[['latitude', 'longitude']])
-    else:
-        feature_trees[name] = None
+places_names_df = None # Global to store only names for 'places'
+
+def load_and_build_tree(name, filename):
+    global places_names_df
+    try:
+        path = os.path.join(data_path, filename)
+        # 1. Only load essential columns
+        cols = ['latitude', 'longitude']
+        if name == 'places':
+            cols.append('name')
+            
+        df = pd.read_feather(path, columns=cols)
+        
+        # 2. Downcast to float32 to save 50% memory per number
+        df['latitude'] = df['latitude'].astype('float32')
+        df['longitude'] = df['longitude'].astype('float32')
+        
+        # 3. Build tree
+        tree = cKDTree(df[['latitude', 'longitude']])
+        
+        if name == 'places':
+            places_names_df = df[['name']].copy()
+            
+        return tree
+    except Exception as e:
+        print(f"Error loading {name}: {e}")
+        return None
+    finally:
+        # 5. Clear intermediate data immediately
+        if 'df' in locals():
+            del df
+        gc.collect()
+
+# Build trees one by one to keep peak RAM low
+for name, filename in feature_files.items():
+    feature_trees[name] = load_and_build_tree(name, filename)
+
+if feature_trees['places'] is None:
+    raise RuntimeError("Critical data files missing or load failed.")
 
 try:
     model = load(os.path.join(model_path, 'store_placement_model.joblib'))
@@ -91,7 +113,7 @@ except Exception as e:
 def calculate_distance_to_nearest(lat, lon, tree):
     if tree is None: return 999.0
     dist, _ = tree.query([[lat, lon]], k=1)
-    return dist[0] * 111.0
+    return float(dist[0] * 111.0)
 
 def generate_features(lat, lon):
     features = {'latitude': lat, 'longitude': lon}
@@ -110,12 +132,11 @@ def generate_features(lat, lon):
     return pd.DataFrame([features])[feature_cols]
 
 def get_nearest_place_name(lat, lon):
-    df = feature_dfs['places']
     tree = feature_trees['places']
-    if df.empty or tree is None: return "Open Area"
+    if tree is None or places_names_df is None: return "Open Area"
     dist, idx = tree.query([[lat, lon]], k=1)
     if dist[0] * 111.0 <= 2.5:
-        name = df.iloc[idx[0]]['name']
+        name = places_names_df.iloc[idx[0]]['name']
         return name if (isinstance(name, str) and name.strip()) else "Open Area"
     return "Open Area"
 
@@ -143,7 +164,7 @@ def predict_circle_locations(request: CircleRequest):
             score = float(probs[good_cluster_id])
             
             results.append({
-                "latitude": p_lat, "longitude": p_lng,
+                "latitude": float(p_lat), "longitude": float(p_lng),
                 "is_suitable": score > 0.6,
                 "suitability_score": round(score, 3),
                 "place_name": get_nearest_place_name(p_lat, p_lng)
