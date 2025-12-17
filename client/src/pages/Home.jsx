@@ -70,7 +70,7 @@ const Home = ({ searchedLocation, user }) => {
   const map = useRef(null);
   const mainMarker = useRef(null);
   const predictionMarkers = useRef([]);
-  const debounceTimeout = useRef(null); // Ref for debounce
+  const debounceTimeout = useRef(null); 
 
   const { theme: themeMode, toggleTheme } = useTheme();
   const t = themes[themeMode];
