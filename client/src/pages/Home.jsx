@@ -5,11 +5,9 @@ import useTheme from "../context/useTheme";
 import { Search, MapPin, X, Trash2, Globe, Sun, Moon, History, Navigation, AlertTriangle } from "lucide-react";
 import '../styles/codeforces.css'; 
 
-const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_API_KEY; 
-
-const VITE_ORS_API_KEY = import.meta.env.VITE_ORS_API_KEY;
-
+const ORS_API_KEY = import.meta.env.VITE_ORS_API_KEY;
 
 const EASTERN_ZONE_BOUNDS = {
   minLat: 17,
