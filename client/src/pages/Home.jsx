@@ -510,7 +510,7 @@ const Home = ({ searchedLocation, user }) => {
             type="text"
             value={searchQuery}
             onChange={handleSearchInputChange}
-            placeholder="Search city (uses MapTiler)"
+            placeholder="Enter a location..."
             className="cf-search-input-field"
             onKeyPress={(e) => e.key === 'Enter' && handleFinalSearch()}
           />
