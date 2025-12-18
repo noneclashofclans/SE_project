@@ -572,20 +572,17 @@ body {
 
 /* --- Bottom Sheet --- */
 .cf-bottom-sheet {
-  position: absolute;
+  position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
-  /* Make the sheet tall enough to hold all content naturally */
   height: auto; 
-  max-height: 80vh; /* Don't go higher than 80% of screen */
+  max-height: 120vh; 
   background: var(--bg-secondary);
   border-top-left-radius: 16px;
   border-top-right-radius: 16px;
   box-shadow: 0 -4px 20px rgba(0,0,0,0.2);
   z-index: 30;
-  
-  /* Use transform for smooth sliding, NOT height changes */
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
@@ -1601,5 +1598,62 @@ body {
     box-sizing: border-box;
     font-size: 14px; 
     padding: 12px 15px;
+  }
+}
+
+/* --- Optimized Mobile Slider (Easy to Adjust) --- */
+@media (max-width: 768px) {
+  
+  .cf-radius-slider-container {
+    padding: 25px 20px !important;
+    /* Define your sizes here for easy tweaking */
+    --thumb-size: 44px;      /* The round handle size */
+    --track-height: 16px;    /* The bar thickness */
+    --track-radius: 8px;     /* Rounded corners of the bar */
+  }
+
+  /* 1. The Track */
+  .cf-slider {
+    height: var(--track-height) !important;
+    border-radius: var(--track-radius) !important;
+    margin-top: 15px !important;
+    margin-bottom: 15px !important;
+    
+    /* Ensure the browser knows this is a touch element */
+    touch-action: none; 
+  }
+
+  /* 2. The Handle (Chrome, Safari, Edge) */
+  .cf-slider::-webkit-slider-thumb {
+    appearance: none;
+    width: var(--thumb-size) !important;
+    height: var(--thumb-size) !important;
+    border-radius: 50%;
+    border: 5px solid; 
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+    
+    /* AUTO-CENTERING MATH: (Track Height / 2) - (Thumb Height / 2) */
+    margin-top: calc((var(--track-height) / 2) - (var(--thumb-size) / 2)) !important;
+  }
+
+  /* 3. The Handle (Firefox) */
+  .cf-slider::-moz-range-thumb {
+    width: var(--thumb-size) !important;
+    height: var(--thumb-size) !important;
+    border: 5px solid;
+    border-radius: 50%;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+    
+    /* Firefox centers automatically, but we ensure dimensions match */
+  }
+
+  /* Make the text larger for readability */
+  .cf-radius-label {
+    font-size: 16px !important;
+    margin-bottom: 12px !important;
+  }
+  
+  .cf-radius-label strong {
+    font-size: 18px !important;
   }
 }

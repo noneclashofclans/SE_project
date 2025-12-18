@@ -342,6 +342,12 @@ const Home = ({ searchedLocation, user }) => {
   }, []);
 
   useEffect(() => {
+    if (analysisResults && analysisResults.length > 0) {
+      setIsSheetExpanded(true);
+    }
+  }, [analysisResults]);
+
+  useEffect(() => {
     if (!map.current) return;
     map.current.setStyle(t.mapStyle || fallbackStyle);
 
@@ -582,7 +588,7 @@ const Home = ({ searchedLocation, user }) => {
               <strong>{radiusValue} km</strong>
             </div>
             <input
-              type="range" min="0.5" max="10" step="0.5"
+              type="range" min="0.5" max="8" step="0.5"
               value={radiusValue}
               onChange={(e) => setRadiusValue(e.target.value)}
               className="cf-slider"
