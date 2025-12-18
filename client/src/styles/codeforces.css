@@ -1610,30 +1610,46 @@ body {
     --thumb-size: 44px;      /* The round handle size */
     --track-height: 16px;    /* The bar thickness */
     --track-radius: 8px;     /* Rounded corners of the bar */
+    /* Add extra padding to increase touch area */
+    padding-top: 30px !important;
+    padding-bottom: 30px !important;
   }
 
-  /* 1. The Track */
+  /* 1. The Track - Increase touch area with padding */
   .cf-slider {
     height: var(--track-height) !important;
     border-radius: var(--track-radius) !important;
     margin-top: 15px !important;
     margin-bottom: 15px !important;
     
+    /* Add vertical padding to increase touch target */
+    padding: 20px 0 !important;
+    
     /* Ensure the browser knows this is a touch element */
     touch-action: none; 
+    
+    /* Make sure the slider is easier to grab */
+    cursor: pointer !important;
   }
 
   /* 2. The Handle (Chrome, Safari, Edge) */
   .cf-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
     appearance: none;
     width: var(--thumb-size) !important;
     height: var(--thumb-size) !important;
     border-radius: 50%;
     border: 5px solid; 
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+    cursor: grab !important;
     
     /* AUTO-CENTERING MATH: (Track Height / 2) - (Thumb Height / 2) */
     margin-top: calc((var(--track-height) / 2) - (var(--thumb-size) / 2)) !important;
+  }
+
+  .cf-slider::-webkit-slider-thumb:active {
+    cursor: grabbing !important;
+    transform: scale(1.1);
   }
 
   /* 3. The Handle (Firefox) */
@@ -1643,8 +1659,14 @@ body {
     border: 5px solid;
     border-radius: 50%;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+    cursor: grab !important;
     
     /* Firefox centers automatically, but we ensure dimensions match */
+  }
+
+  .cf-slider::-moz-range-thumb:active {
+    cursor: grabbing !important;
+    transform: scale(1.1);
   }
 
   /* Make the text larger for readability */
