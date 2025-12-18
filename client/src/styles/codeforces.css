@@ -1600,6 +1600,7 @@ body {
     padding: 12px 15px;
   }
 }
+
 /* --- Optimized Mobile Slider (Easy to Adjust) --- */
 @media (max-width: 768px) {
   
@@ -1609,30 +1610,30 @@ body {
     --track-height: 12px;    /* The bar thickness */
     --track-radius: 10px;    /* Rounded corners of the bar */
     
-    /* Add extra padding around the entire container for better touch area */
     padding: 25px 18px 30px 18px !important;
     margin-top: 20px !important;
     position: relative !important;
   }
 
-  /* 1. The Track - Remove padding, use margin for spacing */
+  /* 1. The Input Element (The Container) */
   .cf-slider {
     position: relative !important;
     width: 100% !important;
-    height: var(--track-height) !important;
-    border-radius: var(--track-radius) !important;
-    margin-top: 20px !important;
-    margin-bottom: 20px !important;
     
-    /* Critical: Remove padding - it breaks drag functionality */
+    /* FIX: Set height to thumb size, not track size. 
+       This prevents the thumb from being cut off. */
+    height: var(--thumb-size) !important; 
+    
+    /* Remove default styling so we can build our own */
+    -webkit-appearance: none !important; 
+    background: transparent !important; 
+    
+    margin-top: 10px !important;
+    margin-bottom: 20px !important;
     padding: 0 !important;
     
-    /* Allow smooth dragging */
-    touch-action: pan-x !important;
-    -webkit-tap-highlight-color: transparent !important;
-    
-    /* Make sure the slider is easier to grab */
     cursor: pointer !important;
+    z-index: 10;
   }
 
   /* 2. The Handle (Chrome, Safari, Edge) */
@@ -1644,13 +1645,31 @@ body {
     border-radius: 50% !important;
     cursor: grab !important;
     
-    /* Center the thumb vertically on the track */
+    /* FIX: Vertical Alignment Calculation
+       (Track Height / 2) - (Thumb Height / 2) 
+       (12 / 2) - (44 / 2) = 6 - 22 = -16px */
     margin-top: calc((var(--track-height) - var(--thumb-size)) / 2) !important;
     
-    /* Smooth transitions */
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    transition: transform 0.1s ease, box-shadow 0.2s ease !important;
+    
+    /* Ensure thumb is on top */
+    position: relative;
+    z-index: 20;
   }
 
+  /* 3. The Track (The Bar) */
+  .cf-slider::-webkit-slider-runnable-track {
+    width: 100% !important;
+    height: var(--track-height) !important;
+    cursor: pointer !important;
+    border-radius: var(--track-radius) !important;
+    
+    /* Ensure the track renders correctly inside the taller input */
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  /* --- Styles for Thumb Colors (Keep existing) --- */
   .light .cf-slider::-webkit-slider-thumb {
     background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%) !important;
     border: 4px solid var(--accent) !important;
@@ -1662,60 +1681,17 @@ body {
     border: 4px solid var(--accent) !important;
     box-shadow: 0 4px 16px rgba(51, 153, 255, 0.45), 0 2px 6px rgba(0, 0, 0, 0.3) !important;
   }
-
+  
+  /* Active State Scale */
   .cf-slider::-webkit-slider-thumb:active {
     cursor: grabbing !important;
-    transform: scale(1.08) !important;
-    box-shadow: 0 6px 20px rgba(0, 85, 170, 0.5), 0 3px 8px rgba(0, 0, 0, 0.2) !important;
+    transform: scale(1.1) !important;
   }
 
-  /* 3. The Handle (Firefox) */
-  .cf-slider::-moz-range-thumb {
-    width: var(--thumb-size) !important;
-    height: var(--thumb-size) !important;
-    border-radius: 50% !important;
-    cursor: grab !important;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    border: none !important;
-  }
-
-  .light .cf-slider::-moz-range-thumb {
-    background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%) !important;
-    border: 4px solid var(--accent) !important;
-    box-shadow: 0 4px 16px rgba(0, 85, 170, 0.35), 0 2px 6px rgba(0, 0, 0, 0.1) !important;
-  }
-
-  .dark .cf-slider::-moz-range-thumb {
-    background: linear-gradient(135deg, #2d2d30 0%, #1a1a1a 100%) !important;
-    border: 4px solid var(--accent) !important;
-    box-shadow: 0 4px 16px rgba(51, 153, 255, 0.45), 0 2px 6px rgba(0, 0, 0, 0.3) !important;
-  }
-
-  .cf-slider::-moz-range-thumb:active {
-    cursor: grabbing !important;
-    transform: scale(1.08) !important;
-    box-shadow: 0 6px 20px rgba(0, 85, 170, 0.5), 0 3px 8px rgba(0, 0, 0, 0.2) !important;
-  }
-
-  /* 4. Track styling for better touch feedback */
-  .cf-slider::-webkit-slider-runnable-track {
-    width: 100% !important;
-    height: var(--track-height) !important;
-    cursor: pointer !important;
-    border-radius: var(--track-radius) !important;
-  }
-
-  .cf-slider::-moz-range-track {
-    width: 100% !important;
-    height: var(--track-height) !important;
-    cursor: pointer !important;
-    border-radius: var(--track-radius) !important;
-  }
-
-  /* Make the text larger for readability */
+  /* 4. Text Label Styling */
   .cf-radius-label {
     font-size: 15px !important;
-    margin-bottom: 16px !important;
+    margin-bottom: 5px !important; /* Reduced slightly */
     font-weight: 500 !important;
   }
   
